@@ -19,10 +19,14 @@ library(tidyverse)
 Load the homicide dataset - 
 
 
+
 ```{r}
 homicide_df = read_csv("./data/homicide-data.csv")%>% 
 janitor::clean_names()
 ```
+
+The homicide dataset contains information about the homicides located in various cities. It tells us the name of the victim, age of the victim, sex of the victim, the state, city, and exact latitude and longitude that the homicide took place in, the date the homicide was reported, and the disposition status of the homicide case. The dataset has `r nrow(homicide_df)` observations. 
+
 
 Let us now create city_state variable and resolved variable
 
@@ -92,8 +96,46 @@ results_df %>%
 
 ## Problem 2
 
+import one dataset 
+
 ```{r}
+data_1 = read_csv("data_problem2/con_01.csv")
+```
+
+```{r, error = TRUE}
+
+problem2_df = 
+  tibble(
+    filename = list.files("data_problem2")
+  ) %>% 
+  mutate(
+    path = str_c("data_problem2/", filename),
+    data = map(path, read_csv )
+  )%>%
+  unnest(data)%>%
+  separate(filename, into = c("arm","subject_id","csv"), convert = TRUE )%>%
+  select(arm, subject_id,week_1:week_8)%>%
+  pivot_longer(
+    week_1:week_8,
+    names_to = "week_number",
+    values_to = "value")%>%
+  mutate(
+    
+    subject_id = as.character(subject_id)
+  )
+
+
 
 ```
 
+Let us now create the spaghetti plot of how the values change over time for each treatment arm
 
+```{r}
+problem2_df%>%
+  ggplot(aes(x = week_number, y = value, color = subject_id, group = subject_id))+
+  geom_line()+
+  facet_grid( arm ~ .)
+
+```
+
+From the graph, it is clear that the values increase over time in the experimental arm but stay relatively constant in the control arm. The values start at about the same average value in the beginning for both groups, but over time, the values in the experimental group increase and are greater than those in the control group. 
