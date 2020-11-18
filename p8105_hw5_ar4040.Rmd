@@ -1,0 +1,17 @@
+---
+title: "Homework 5"
+author: Adarsh Ramakrishnan
+output: github_document
+---
+
+This is my homework 5 solution:
+
+
+Loading libraries:
+
+```{r libraries}
+library(tidyverse)
+```
+
+
+## Problem 1
