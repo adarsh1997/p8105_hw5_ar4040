@@ -11,6 +11,7 @@ Loading libraries:
 
 ```{r libraries}
 library(tidyverse)
+library(patchwork)
 ```
 
 
@@ -165,7 +166,7 @@ Now let us run the simulation 5000 times for mu values ranging from 0 to 7 and s
 ```{r}
 sim_results = tibble(true_mu = c(0,1,2,3,4,5,6)) %>% 
   mutate(
-    output = map(.x = true_mu, ~rerun(100, simulation(mu = .x))),
+    output = map(.x = true_mu, ~rerun(5000, simulation(mu = .x))),
     combined_output = map(output, bind_rows)) %>% 
   select(-output) %>% 
   unnest(combined_output)
@@ -184,7 +185,56 @@ sim_results%>%
   group_by(true_mu)%>%
   summarize(power = sum(reject)/n()  )%>%
   ggplot(aes(x = true_mu, y=power))+
+  geom_point()+
   geom_line()+
   labs(title = "Power vs Effect Size", x = "True value of Mu", y = "Power")
 ```
-It is clear that as the true value of mu or effect size increases, power increases as well. Hence power and effect size are directly related. 
+It is clear that as the true value of mu or effect size increases, power increases as well. Hence power and effect size are directly associated.
+
+Now let us make a second visualization of the average value of the estimate vs the true value of mu for all samples and for samples where null was rejected
+
+```{r}
+plot_1 =
+  
+  sim_results%>%
+  mutate(reject = case_when(
+    
+    p.value < 0.05 ~ 1,
+    p.value >= 0.05 ~ 0
+    
+  ))%>%
+  group_by(true_mu)%>%
+  summarize(mean_estimate = mean(estimate))%>%
+  ggplot(aes(x = true_mu, y = mean_estimate))+
+  geom_point()+
+  geom_line()+
+  labs(title = "True Mu vs Mean Estimate", x = "True value of Mu", y = "Mean Estimate")
+
+plot_2 = 
+  
+  sim_results%>%
+  mutate(reject = case_when(
+    
+    p.value < 0.05 ~ 1,
+    p.value >= 0.05 ~ 0
+    
+  ))%>%
+  filter(reject == 1)%>%
+  group_by(true_mu)%>%
+  summarize(mean_estimate = mean(estimate))%>%
+  ggplot(aes(x = true_mu, y = mean_estimate))+
+  geom_point()+
+  geom_line()+
+  labs(title = "True Mu vs Mean Estimate", x = "True value of Mu", y = "Mean Estimate")
+  
+```
+
+Adding the two plots together,
+
+```{r}
+plot_1 + plot_2
+```
+
+It is clear that the sample average of the estimate values does not equal to the true mu values closely when looking at the sample where null is rejected. These values do match closely in the total sample.
+
+This discrepancy is because in the sample where the null is rejected, estimate values for the lower mu values that are closer to the null value of 0 (such as 0 and 1) are going to be skewed higher or away from zero, making them different from the true value of mu. 
